@@ -7,7 +7,8 @@ export default function RootLayout() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="home" />
+      <Stack.Screen name="product_home" />
+      <Stack.Screen name="product_details/[id]" />
     </Stack>
   );
 }

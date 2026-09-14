@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import ProductCard from "../../../components/ProductCard";
+import ProductList from "../../../components/ProductList";
 import SearchBar from "../../../components/SearchBar";
 
 const products = [
@@ -119,7 +119,7 @@ export default function HomeScreen() {
 
       <SearchBar search={search} setSearch={setSearch} />
 
-      <ProductCard products={filteredProducts} loading={loading} />
+      <ProductList products={filteredProducts} loading={loading} />
     </SafeAreaView>
   );
 }

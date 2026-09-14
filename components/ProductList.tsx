@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -17,17 +18,25 @@ type ProductType = {
   description: string;
 };
 
-interface ProductCardProps {
+interface ProductListProps {
   products: ProductType[];
   loading: boolean;
 }
 
-export default function ProductCard({ products, loading }: ProductCardProps) {
+export default function ProductList({ products, loading }: ProductListProps) {
   const renderProduct = ({ item }: any) => (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => ""}
+      onPress={() =>
+        router.push({
+          pathname: "/product_details/[id]",
+          params: {
+            id: item.id.toString(),
+            product: JSON.stringify(item),
+          },
+        })
+      }
     >
       <Image
         source={{ uri: item.thumbnail }}
