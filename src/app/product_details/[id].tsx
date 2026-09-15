@@ -59,10 +59,6 @@ export default function ProductDetailScreen() {
           <Text style={styles.sectionTitle}>Description</Text>
 
           <Text style={styles.description}>{product.description}</Text>
-
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Add to Cart</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -170,20 +166,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     color: "#666",
-  },
-
-  button: {
-    height: 52,
-    marginTop: 30,
-    borderRadius: 14,
-    backgroundColor: "#111",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  buttonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

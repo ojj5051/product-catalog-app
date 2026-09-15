@@ -39,7 +39,6 @@ export default function FilterDropdown({
         <Text style={styles.arrow}>▼</Text>
       </TouchableOpacity>
 
-      {/* Dropdown modal */}
       <Modal
         visible={visible}
         transparent

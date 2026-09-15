@@ -1,101 +1,18 @@
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+import { getProducts } from "@/api/productApi";
+import FilterDropdown from "@/components/FilterDropdown";
+import ProductList from "@/components/ProductList";
+import SearchBar from "@/components/SearchBar";
+import { Product } from "@/types/product";
 import { SafeAreaView } from "react-native-safe-area-context";
-import FilterDropdown from "../../../components/FilterDropdown";
-import ProductList from "../../../components/ProductList";
-import SearchBar from "../../../components/SearchBar";
-
-const products = [
-  {
-    id: 1,
-    title: "Essence Mascara Lash Princess",
-    price: 9.99,
-    rating: 4.94,
-    category: "Beauty",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp",
-    description:
-      "The Essence Mascara Lash Princess is a popular mascara designed to provide volume and length.",
-  },
-  {
-    id: 2,
-    title: "Eyeshadow Palette with Mirror",
-    price: 19.99,
-    rating: 3.28,
-    category: "Beauty",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/beauty/eyeshadow-palette-with-mirror/thumbnail.webp",
-    description:
-      "A versatile eyeshadow palette with multiple shades and a built-in mirror.",
-  },
-  {
-    id: 3,
-    title: "Powder Canister",
-    price: 14.99,
-    rating: 3.82,
-    category: "Beauty",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/beauty/powder-canister/thumbnail.webp",
-    description:
-      "A compact powder canister suitable for everyday makeup application.",
-  },
-  {
-    id: 4,
-    title: "Red Lipstick",
-    price: 12.99,
-    rating: 4.36,
-    category: "Beauty",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/beauty/red-lipstick/thumbnail.webp",
-    description:
-      "A vibrant red lipstick with a smooth and long-lasting finish.",
-  },
-  {
-    id: 7,
-    title: "Wireless Headphones",
-    price: 89.99,
-    rating: 4.41,
-    category: "Electronics",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/mobile-accessories/amazon-echo-plus/thumbnail.webp",
-    description:
-      "Comfortable wireless headphones with clear sound and long battery life.",
-  },
-  {
-    id: 8,
-    title: "Annibale Colombo Bed",
-    price: 1899.99,
-    rating: 4.77,
-    category: "Furniture",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/furniture/annibale-colombo-bed/thumbnail.webp",
-    description:
-      "The Annibale Colombo Bed is a luxurious and elegant bed frame, crafted with high-quality materials for a comfortable and stylish bedroom.",
-  },
-  {
-    id: 9,
-    title: "Annibale Colombo Sofa",
-    price: 2499.99,
-    rating: 3.92,
-    category: "Furniture",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/furniture/annibale-colombo-sofa/thumbnail.webp",
-    description:
-      "The Annibale Colombo Sofa is a sophisticated and comfortable seating option, featuring exquisite design and premium upholstery for your living room.",
-  },
-  {
-    id: 10,
-    title: "Fresh Apples",
-    price: 4.99,
-    rating: 4.65,
-    category: "Groceries",
-    thumbnail:
-      "https://cdn.dummyjson.com/product-images/groceries/apple/thumbnail.webp",
-    description:
-      "Fresh and delicious apples suitable for snacks and everyday meals.",
-  },
-];
 
 const priceOptions = [
   "All",
@@ -107,17 +24,48 @@ const priceOptions = [
 
 const ratingOptions = ["All", "4.5+", "4.0+", "3.0+"];
 
+const LIMIT = 20;
+
 export default function HomeScreen() {
   const [search, setSearch] = useState("");
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedPrice, setSelectedPrice] = useState("All");
   const [selectedRating, setSelectedRating] = useState("All");
-  const [loading, setLoading] = useState(false);
 
-  const categories = [
-    "All",
-    ...new Set(products.map((product) => product.category)),
-  ];
+  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const loadProducts = async (pageNumber: number) => {
+    try {
+      setLoading(true);
+
+      setPage(pageNumber);
+
+      const skip = (pageNumber - 1) * LIMIT;
+
+      const response = await getProducts(LIMIT, skip);
+
+      setProducts(response.products);
+      setTotal(response.total);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts(1);
+  }, []);
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  const categories = useMemo(() => {
+    return ["All", ...new Set(products.map((product) => product.category))];
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -147,7 +95,39 @@ export default function HomeScreen() {
 
       return matchesSearch && matchesCategory && matchesPrice && matchesRating;
     });
-  }, [search, selectedCategory, selectedPrice, selectedRating]);
+  }, [search, selectedCategory, selectedPrice, selectedRating, products]);
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+      return pages;
+    }
+
+    pages.push(1);
+
+    if (page > 3) {
+      pages.push("...");
+    }
+
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (page < totalPages - 2) {
+      pages.push("...");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -187,6 +167,54 @@ export default function HomeScreen() {
       </ScrollView>
 
       <ProductList products={filteredProducts} loading={loading} />
+
+      <View style={styles.pagination}>
+        <TouchableOpacity
+          disabled={page === 1}
+          onPress={() => loadProducts(page - 1)}
+          style={styles.pageButton}
+        >
+          <Text>‹</Text>
+        </TouchableOpacity>
+
+        {getPageNumbers().map((item, index) => {
+          if (item === "...") {
+            return (
+              <View key={`dots-${index}`} style={styles.dots}>
+                <Text>...</Text>
+              </View>
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              key={item}
+              onPress={() => loadProducts(Number(item))}
+              style={[
+                styles.pageButton,
+                page === item && styles.activePageButton,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.pageText,
+                  page === item && styles.activePageText,
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+
+        <TouchableOpacity
+          disabled={page === totalPages}
+          onPress={() => loadProducts(page + 1)}
+          style={styles.pageButton}
+        >
+          <Text>›</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -223,5 +251,42 @@ const styles = StyleSheet.create({
   filterScroll: {
     flexGrow: 0,
     flexShrink: 0,
+  },
+
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 16,
+  },
+
+  pageButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  activePageButton: {
+    backgroundColor: "#000",
+    borderColor: "#000",
+  },
+
+  pageText: {
+    fontSize: 13,
+    color: "#333",
+  },
+
+  activePageText: {
+    color: "#fff",
+  },
+
+  dots: {
+    width: 24,
+    alignItems: "center",
   },
 });
