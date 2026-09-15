@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getProducts } from "@/api/productApi";
 import FilterDropdown from "@/components/FilterDropdown";
+import Pagination from "@/components/pagination";
 import ProductList from "@/components/ProductList";
 import SearchBar from "@/components/SearchBar";
 import { Product } from "@/types/product";
@@ -97,38 +92,6 @@ export default function HomeScreen() {
     });
   }, [search, selectedCategory, selectedPrice, selectedRating, products]);
 
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-      return pages;
-    }
-
-    pages.push(1);
-
-    if (page > 3) {
-      pages.push("...");
-    }
-
-    const start = Math.max(2, page - 1);
-    const end = Math.min(totalPages - 1, page + 1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    if (page < totalPages - 2) {
-      pages.push("...");
-    }
-
-    pages.push(totalPages);
-
-    return pages;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -168,53 +131,11 @@ export default function HomeScreen() {
 
       <ProductList products={filteredProducts} loading={loading} />
 
-      <View style={styles.pagination}>
-        <TouchableOpacity
-          disabled={page === 1}
-          onPress={() => loadProducts(page - 1)}
-          style={styles.pageButton}
-        >
-          <Text>‹</Text>
-        </TouchableOpacity>
-
-        {getPageNumbers().map((item, index) => {
-          if (item === "...") {
-            return (
-              <View key={`dots-${index}`} style={styles.dots}>
-                <Text>...</Text>
-              </View>
-            );
-          }
-
-          return (
-            <TouchableOpacity
-              key={item}
-              onPress={() => loadProducts(Number(item))}
-              style={[
-                styles.pageButton,
-                page === item && styles.activePageButton,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.pageText,
-                  page === item && styles.activePageText,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-
-        <TouchableOpacity
-          disabled={page === totalPages}
-          onPress={() => loadProducts(page + 1)}
-          style={styles.pageButton}
-        >
-          <Text>›</Text>
-        </TouchableOpacity>
-      </View>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        loadProducts={loadProducts}
+      />
     </SafeAreaView>
   );
 }
@@ -251,42 +172,5 @@ const styles = StyleSheet.create({
   filterScroll: {
     flexGrow: 0,
     flexShrink: 0,
-  },
-
-  pagination: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 16,
-  },
-
-  pageButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  activePageButton: {
-    backgroundColor: "#000",
-    borderColor: "#000",
-  },
-
-  pageText: {
-    fontSize: 13,
-    color: "#333",
-  },
-
-  activePageText: {
-    color: "#fff",
-  },
-
-  dots: {
-    width: 24,
-    alignItems: "center",
   },
 });
