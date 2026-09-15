@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { getProducts } from "@/api/productApi";
+import { getProducts, searchProducts } from "@/api/productApi";
 import FilterDropdown from "@/components/FilterDropdown";
 import Pagination from "@/components/pagination";
 import ProductList from "@/components/ProductList";
@@ -36,7 +36,6 @@ export default function HomeScreen() {
   const loadProducts = async (pageNumber: number) => {
     try {
       setLoading(true);
-
       setPage(pageNumber);
 
       const skip = (pageNumber - 1) * LIMIT;
@@ -52,9 +51,35 @@ export default function HomeScreen() {
     }
   };
 
+  const handleSearch = async (query: string, pageNumber = 1) => {
+    try {
+      setLoading(true);
+      setPage(pageNumber);
+
+      const skip = (pageNumber - 1) * LIMIT;
+
+      const response = await searchProducts(query, LIMIT, skip);
+
+      setProducts(response.products);
+      setTotal(response.total);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadProducts(1);
-  }, []);
+    const timer = setTimeout(() => {
+      if (search.trim()) {
+        handleSearch(search.trim());
+      } else {
+        loadProducts(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const totalPages = Math.ceil(total / LIMIT);
 
@@ -64,10 +89,6 @@ export default function HomeScreen() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchesSearch = product.title
-        .toLowerCase()
-        .includes(search.toLowerCase());
-
       const matchesCategory =
         selectedCategory === "All" || product.category === selectedCategory;
 
@@ -88,9 +109,9 @@ export default function HomeScreen() {
         (selectedRating === "4.0+" && product.rating >= 4.0) ||
         (selectedRating === "3.0+" && product.rating >= 3.0);
 
-      return matchesSearch && matchesCategory && matchesPrice && matchesRating;
+      return matchesCategory && matchesPrice && matchesRating;
     });
-  }, [search, selectedCategory, selectedPrice, selectedRating, products]);
+  }, [products, selectedCategory, selectedPrice, selectedRating]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,6 +155,8 @@ export default function HomeScreen() {
       <Pagination
         page={page}
         totalPages={totalPages}
+        search={search}
+        handleSearch={handleSearch}
         loadProducts={loadProducts}
       />
     </SafeAreaView>
