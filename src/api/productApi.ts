@@ -21,6 +21,30 @@ export const getProductById = async (id: number): Promise<Product> => {
   return response.data;
 };
 
+export const getProductsByCategory = async (
+  category: string,
+  limit = 20,
+  skip = 0,
+): Promise<ProductResponse> => {
+  const response = await axiosInstance.get<ProductResponse>(
+    `/products/category/${category}`,
+    {
+      params: {
+        limit,
+        skip,
+      },
+    },
+  );
+
+  return response.data;
+};
+
+export const getCategories = async (): Promise<string[]> => {
+  const response = await axiosInstance.get<string[]>("/products/categories");
+
+  return response.data;
+};
+
 export const searchProducts = async (
   query: string,
   limit = 20,
