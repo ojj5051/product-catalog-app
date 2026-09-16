@@ -14,24 +14,12 @@ import SearchBar from "@/components/SearchBar";
 import { Product, ProductResponse } from "@/types/product";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const priceOptions = [
-  "All",
-  "Under $20",
-  "$20 - $100",
-  "$100 - $500",
-  "Over $500",
-];
-
-const ratingOptions = ["All", "4.5+", "4.0+", "3.0+"];
-
 const LIMIT = 20;
 
 export default function HomeScreen() {
   const [search, setSearch] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedPrice, setSelectedPrice] = useState("All");
-  const [selectedRating, setSelectedRating] = useState("All");
 
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -59,13 +47,26 @@ export default function HomeScreen() {
 
       if (search.trim()) {
         response = await searchProducts(search.trim(), LIMIT, skip);
+
+        let result = response.products;
+
+        if (selectedCategory !== "All") {
+          result = result.filter(
+            (product) => product.category === selectedCategory.toLowerCase(),
+          );
+        }
+
+        setProducts(result);
       } else if (selectedCategory !== "All") {
         response = await getProductsByCategory(selectedCategory, LIMIT, skip);
+
+        setProducts(response.products);
       } else {
         response = await getProducts(LIMIT, skip);
+
+        setProducts(response.products);
       }
 
-      setProducts(response.products);
       setTotal(response.total);
     } catch (error) {
       console.error(error);
