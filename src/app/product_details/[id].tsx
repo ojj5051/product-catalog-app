@@ -1,67 +1,163 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
   Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ViewToken,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ProductDetailScreen() {
-  const router = useRouter();
+const { width } = Dimensions.get("window");
 
-  const { product: productParam } = useLocalSearchParams<{
+type ProductType = {
+  id: number;
+  title: string;
+  price: number;
+  rating: number;
+  thumbnail: string;
+  description: string;
+  images: string[];
+};
+
+export default function ProductDetails() {
+  const { product } = useLocalSearchParams<{
     id: string;
     product: string;
   }>();
 
-  const product = JSON.parse(productParam);
+  const [productData, setProductData] = useState<ProductType | null>(null);
+  const [currentImage, setCurrentImage] = useState(0);
+
+  const imageListRef = useRef<FlatList<string>>(null);
+
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    try {
+      setProductData(JSON.parse(product));
+    } catch (error) {
+      console.error("Failed to parse product:", error);
+    }
+  }, [product]);
+
+  const images = productData?.images?.length
+    ? productData.images
+    : productData
+      ? [productData.thumbnail]
+      : [];
+
+  useEffect(() => {
+    if (images.length <= 1) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentImage((previous) => {
+        const nextIndex = (previous + 1) % images.length;
+
+        imageListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+
+        return nextIndex;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setCurrentImage(viewableItems[0].index);
+      }
+    },
+  ).current;
+
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+  }).current;
+
+  if (!productData) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.imageContainer}>
         <TouchableOpacity
-          onPress={() => router.back()}
           style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.8}
         >
-          <Text style={styles.backText}>‹</Text>
+          <Text style={styles.backButtonText}>‹</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Product Details</Text>
+        <FlatList
+          ref={imageListRef}
+          data={images}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item, index) => `${item}-${index}`}
+          renderItem={({ item }) => (
+            <View style={styles.imageSlide}>
+              <Image
+                source={{ uri: item }}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            </View>
+          )}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          getItemLayout={(_, index) => ({
+            length: width,
+            offset: width * index,
+            index,
+          })}
+        />
 
-        <View style={{ width: 40 }} />
+        {images.length > 1 && (
+          <View style={styles.indicators}>
+            {images.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.indicator,
+                  index === currentImage && styles.activeIndicator,
+                ]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: product.thumbnail }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        </View>
+      <View style={styles.content}>
+        <Text style={styles.title}>{productData.title}</Text>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>{product.title}</Text>
+        <Text style={styles.rating}>⭐ {productData.rating}</Text>
 
-          <View style={styles.ratingRow}>
-            <Text style={styles.rating}>⭐ {product.rating}</Text>
+        <Text style={styles.price}>${productData.price.toFixed(2)}</Text>
 
-            <Text style={styles.reviews}>Customer rating</Text>
-          </View>
+        <Text style={styles.descriptionTitle}>Description</Text>
 
-          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.sectionTitle}>Description</Text>
-
-          <Text style={styles.description}>{product.description}</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <Text style={styles.description}>{productData.description}</Text>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -71,100 +167,107 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
 
-  header: {
-    height: 60,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
-  },
-
   backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 10,
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  backText: {
-    fontSize: 38,
-    color: "#111",
-    lineHeight: 40,
-  },
-
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#111",
+  backButtonText: {
+    fontSize: 32,
+    lineHeight: 34,
+    color: "#222",
+    marginTop: -3,
   },
 
   imageContainer: {
-    height: 330,
-    margin: 20,
-    borderRadius: 20,
-    backgroundColor: "#F7F7F8",
+    height: 350,
+    backgroundColor: "#F4F4F4",
+    position: "relative",
+  },
+
+  imageSlide: {
+    width,
+    height: 350,
     justifyContent: "center",
     alignItems: "center",
   },
 
   image: {
-    width: "85%",
-    height: "85%",
+    width: "100%",
+    height: "100%",
+  },
+
+  indicators: {
+    position: "absolute",
+    bottom: 15,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  indicator: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#CCC",
+  },
+
+  activeIndicator: {
+    width: 20,
+    backgroundColor: "#222",
   },
 
   content: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    padding: 20,
   },
 
   title: {
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: "700",
-    color: "#111",
-  },
-
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
+    color: "#222",
   },
 
   rating: {
-    fontSize: 14,
-    color: "#555",
-  },
-
-  reviews: {
-    marginLeft: 10,
-    fontSize: 13,
-    color: "#999",
+    marginTop: 10,
+    fontSize: 15,
+    color: "#666",
   },
 
   price: {
-    marginTop: 18,
-    fontSize: 28,
+    marginTop: 12,
+    fontSize: 24,
     fontWeight: "700",
     color: "#111",
   },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#EEE",
-    marginVertical: 24,
-  },
-
-  sectionTitle: {
+  descriptionTitle: {
+    marginTop: 24,
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#222",
   },
 
   description: {
-    marginTop: 10,
+    marginTop: 8,
     fontSize: 15,
-    lineHeight: 24,
+    lineHeight: 23,
     color: "#666",
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
