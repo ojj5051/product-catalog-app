@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import {
   ActivityIndicator,
-  Button,
   FlatList,
   Image,
   StyleSheet,
@@ -75,7 +74,12 @@ export default function ProductList({
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>Error</Text>
           <Text style={styles.stateText}>{error}</Text>
-          <Button title="Retry" onPress={() => loadProducts(1)} />
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadProducts(1)}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : products.length === 0 ? ( // Empty state
         <View style={styles.center}>
@@ -161,5 +165,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#222",
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#ff000dff",
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fafafaff",
   },
 });
