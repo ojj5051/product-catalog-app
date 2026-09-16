@@ -54,6 +54,7 @@ export default function ProductDetails() {
       ? [productData.thumbnail]
       : [];
 
+  // Slide image every 3 seconds
   useEffect(() => {
     if (images.length <= 1) {
       return;
@@ -75,6 +76,7 @@ export default function ProductDetails() {
     return () => clearInterval(interval);
   }, [images.length]);
 
+  // Handle slide image with finger/swipe navigation
   const handleViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index != null) {
@@ -82,10 +84,6 @@ export default function ProductDetails() {
       }
     },
   ).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
 
   if (!productData) {
     return (
@@ -123,7 +121,6 @@ export default function ProductDetails() {
             </View>
           )}
           onViewableItemsChanged={handleViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
           getItemLayout={(_, index) => ({
             length: width,
             offset: width * index,

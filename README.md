@@ -14,6 +14,7 @@ The app retrieves product data from the DummyJSON API and provides product brows
 
 - Pagination using `limit` and `skip`
 - Product detail screen
+- Product detail image slider
 - Search with debounce
 - Category filtering
 - Search + category filtering
@@ -166,6 +167,8 @@ Search entered?
     └── All → Products API
 ```
 
+Search endpoint was used because it was more efficient than filtering the results locally, as it reduce the number of products returned from the API. Additionally the search endpoint also support pagination, so we can use the same pagination logic for both search and category filtering.
+
 ## Pagination
 
 The UI uses 1-based page numbers.
@@ -250,6 +253,76 @@ router.push()
        ↓
 Product Details Screen
 ```
+
+## AI Usage
+
+AI assistance was used during development to help with implementation ideas, code structure, debugging, and reviewing approaches.
+
+### Pagination
+
+AI was used to assist with the pagination implementation, particularly:
+
+- Calculating the `skip` value based on the current page and page size.
+- Structuring the pagination flow using the DummyJSON API's `limit` and `skip` parameters.
+- Reviewing the page calculation logic.
+- Suggesting ways to handle page changes and reload products when the page changes.
+
+The final pagination implementation was reviewed and integrated into the application based on the project's requirements.
+
+Example:
+
+```tsx
+const skip = (pageNumber - 1) * LIMIT;
+
+const response = await getProducts(LIMIT, skip);
+```
+
+### Image Slider
+
+AI was also used to assist with implementing the product image slider on the product details screen.
+
+The assistance included:
+
+- Suggesting the use of React Native `FlatList` with `horizontal` and `pagingEnabled`.
+- Implementing finger/swipe navigation between product images.
+- Implementing automatic image switching at a 3-second interval.
+- Adding image position indicators.
+- Handling the transition from the last image back to the first image.
+- Reviewing the interaction between manual swiping and automatic sliding.
+
+The final implementation uses React Native's built-in `FlatList` and does not require an additional carousel library.
+
+Example:
+
+```tsx
+<FlatList
+  data={images}
+  horizontal
+  pagingEnabled
+  showsHorizontalScrollIndicator={false}
+/>
+```
+
+The automatic slider uses:
+
+```tsx
+const interval = setInterval(() => {
+  setCurrentImage((previous) => {
+    const nextIndex = (previous + 1) % images.length;
+
+    imageListRef.current?.scrollToIndex({
+      index: nextIndex,
+      animated: true,
+    });
+
+    return nextIndex;
+  });
+}, 3000);
+```
+
+### AI Contribution
+
+AI was used as a development assistant rather than as a replacement for implementation or testing. Code suggestions were reviewed, adapted to the application's existing architecture, and tested locally before being included.
 
 ## Assumptions
 
