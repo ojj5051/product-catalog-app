@@ -35,6 +35,8 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -79,6 +81,7 @@ export default function HomeScreen() {
       setTotal(response.total);
     } catch (error) {
       console.error(error);
+      setError("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -125,6 +128,7 @@ export default function HomeScreen() {
       <ProductList
         products={products}
         loading={loading}
+        error={error}
         loadProducts={loadProducts}
       />
 

@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import {
   ActivityIndicator,
+  Button,
   FlatList,
   Image,
   StyleSheet,
@@ -21,12 +22,14 @@ type ProductType = {
 interface ProductListProps {
   products: ProductType[];
   loading: boolean;
+  error?: string;
   loadProducts: (pageNumber: number) => void;
 }
 
 export default function ProductList({
   products,
   loading,
+  error,
   loadProducts,
 }: ProductListProps) {
   const renderProduct = ({ item }: any) => (
@@ -63,12 +66,18 @@ export default function ProductList({
 
   return (
     <View style={styles.container}>
-      {loading ? (
+      {loading ? ( // Loading state
         <View style={styles.center}>
           <ActivityIndicator size="large" />
           <Text style={styles.stateText}>Loading products...</Text>
         </View>
-      ) : products.length === 0 ? (
+      ) : error ? ( // Error state
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>Error</Text>
+          <Text style={styles.stateText}>{error}</Text>
+          <Button title="Retry" onPress={() => loadProducts(1)} />
+        </View>
+      ) : products.length === 0 ? ( // Empty state
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>No products found</Text>
           <Text style={styles.stateText}>
