@@ -1,12 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
-import { getProducts, searchProducts } from "@/api/productApi";
+import {
+  getCategories,
+  getProducts,
+  getProductsByCategory,
+  searchProducts,
+} from "@/api/productApi";
 import FilterDropdown from "@/components/FilterDropdown";
 import Pagination from "@/components/pagination";
 import ProductList from "@/components/ProductList";
 import SearchBar from "@/components/SearchBar";
-import { Product } from "@/types/product";
+import { Product, ProductResponse } from "@/types/product";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const priceOptions = [
@@ -32,33 +37,33 @@ export default function HomeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [categories, setCategories] = useState<string[]>([]);
 
-  const loadProducts = async (pageNumber: number) => {
+  const loadCategories = async () => {
     try {
-      setLoading(true);
-      setPage(pageNumber);
-
-      const skip = (pageNumber - 1) * LIMIT;
-
-      const response = await getProducts(LIMIT, skip);
-
-      setProducts(response.products);
-      setTotal(response.total);
+      const categories = await getCategories();
+      setCategories(["All", ...categories.map((category) => category.name)]);
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSearch = async (query: string, pageNumber = 1) => {
+  const loadProducts = async (pageNumber: number = 1) => {
     try {
       setLoading(true);
       setPage(pageNumber);
 
       const skip = (pageNumber - 1) * LIMIT;
 
-      const response = await searchProducts(query, LIMIT, skip);
+      let response: ProductResponse;
+
+      if (search.trim()) {
+        response = await searchProducts(search.trim(), LIMIT, skip);
+      } else if (selectedCategory !== "All") {
+        response = await getProductsByCategory(selectedCategory, LIMIT, skip);
+      } else {
+        response = await getProducts(LIMIT, skip);
+      }
 
       setProducts(response.products);
       setTotal(response.total);
@@ -70,48 +75,22 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    loadProducts(1);
+  }, [selectedCategory]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      if (search.trim()) {
-        handleSearch(search.trim());
-      } else {
-        loadProducts(1);
-      }
+      loadProducts(1);
     }, 500);
 
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
   const totalPages = Math.ceil(total / LIMIT);
-
-  const categories = useMemo(() => {
-    return ["All", ...new Set(products.map((product) => product.category))];
-  }, [products]);
-
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesCategory =
-        selectedCategory === "All" || product.category === selectedCategory;
-
-      const matchesPrice =
-        selectedPrice === "All" ||
-        (selectedPrice === "Under $20" && product.price < 20) ||
-        (selectedPrice === "$20 - $100" &&
-          product.price >= 20 &&
-          product.price <= 100) ||
-        (selectedPrice === "$100 - $500" &&
-          product.price > 100 &&
-          product.price <= 500) ||
-        (selectedPrice === "Over $500" && product.price > 500);
-
-      const matchesRating =
-        selectedRating === "All" ||
-        (selectedRating === "4.5+" && product.rating >= 4.5) ||
-        (selectedRating === "4.0+" && product.rating >= 4.0) ||
-        (selectedRating === "3.0+" && product.rating >= 3.0);
-
-      return matchesCategory && matchesPrice && matchesRating;
-    });
-  }, [products, selectedCategory, selectedPrice, selectedRating]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -122,41 +101,18 @@ export default function HomeScreen() {
 
       <SearchBar search={search} setSearch={setSearch} />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterContainer}
-        style={styles.filterScroll}
-      >
-        <FilterDropdown
-          label="Category"
-          value={selectedCategory}
-          options={categories}
-          onChange={setSelectedCategory}
-        />
+      <FilterDropdown
+        label="Category"
+        value={selectedCategory}
+        options={categories}
+        onChange={setSelectedCategory}
+      />
 
-        <FilterDropdown
-          label="Price"
-          value={selectedPrice}
-          options={priceOptions}
-          onChange={setSelectedPrice}
-        />
-
-        <FilterDropdown
-          label="Rating"
-          value={selectedRating}
-          options={ratingOptions}
-          onChange={setSelectedRating}
-        />
-      </ScrollView>
-
-      <ProductList products={filteredProducts} loading={loading} />
+      <ProductList products={products} loading={loading} />
 
       <Pagination
         page={page}
         totalPages={totalPages}
-        search={search}
-        handleSearch={handleSearch}
         loadProducts={loadProducts}
       />
     </SafeAreaView>

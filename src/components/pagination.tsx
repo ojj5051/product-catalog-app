@@ -3,16 +3,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 interface PaginationProps {
   page: number;
   totalPages: number;
-  search: string;
-  handleSearch: (query: string, pageNumber: number) => void;
   loadProducts: (page: number) => void;
 }
 
 export default function Pagination({
   page,
   totalPages,
-  search,
-  handleSearch,
   loadProducts,
 }: PaginationProps) {
   const getPageNumbers = () => {
@@ -69,13 +65,7 @@ export default function Pagination({
         return (
           <TouchableOpacity
             key={item}
-            onPress={() => {
-              if (search.trim()) {
-                handleSearch(search.trim(), Number(item));
-              } else {
-                loadProducts(Number(item));
-              }
-            }}
+            onPress={() => loadProducts(Number(item))}
             style={[
               styles.pageButton,
               page === item && styles.activePageButton,

@@ -87,7 +87,8 @@ export default function FilterDropdown({
 
 const styles = StyleSheet.create({
   container: {
-    marginRight: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
 
   button: {
