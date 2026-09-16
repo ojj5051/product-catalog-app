@@ -1,56 +1,268 @@
-# Welcome to your Expo app 👋
+# Product Catalog App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple mobile product catalog application built with **React Native, Expo, TypeScript, and Expo Router**.
 
-## Get started
+The app retrieves product data from the DummyJSON API and provides product browsing, search, category filtering, pagination, pull-to-refresh, and product details.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- Product listing with:
+  - Product title
+  - Thumbnail
+  - Price
+  - Rating
 
-2. Start the app
+- Pagination using `limit` and `skip`
+- Product detail screen
+- Search with debounce
+- Category filtering
+- Search + category filtering
+- Pull-to-refresh
+- Loading state
+- Empty state
+- Error handling with retry
+- Navigation using Expo Router
+- Unit/component tests
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+- React Native
+- Expo
+- TypeScript
+- Expo Router
+- Axios
+- Jest
+- React Native Testing Library
+- DummyJSON API
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+src/
+├── app/
+│   ├── _layout.tsx
+│   ├── product_home/
+│   │   ├── __tests__/
+│   │   │   └── index.test.tsx
+│   │   └── index.tsx
+│   └── product_details/
+│       └── [id].tsx
+│
+├── api/
+│   ├── axios.ts
+│   └── productApi.ts
+│
+├── components/
+│   ├── __tests__/
+│   │   └── ProductList.test.tsx
+│   ├── FilterDropdown.tsx
+│   ├── Pagination.tsx
+│   ├── ProductList.tsx
+│   └── SearchBar.tsx
+│
+└── types/
+    └── product.ts
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Code Organization
 
-### Other setup steps
+The application separates the UI and data/API responsibilities:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```text
+UI / Presentation
+        ↓
+API / Data Layer
+        ↓
+DummyJSON API
+```
 
-## Learn more
+- `app/` — Screens and Expo Router routes
+- `components/` — Reusable UI components
+- `api/` — Axios configuration and API functions
+- `types/` — TypeScript interfaces
+- `__tests__/` — Jest tests
 
-To learn more about developing your project with Expo, look at the following resources:
+## Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 1. Install dependencies
 
-## Join the community
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+### 2. Start the application
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+```
+
+You can then run the application using:
+
+- Expo Go
+- Android Emulator
+- iOS Simulator
+
+## Architecture Decisions
+
+### UI / Presentation
+
+The `app` and `components` folders contain screens and reusable UI components.
+
+### Data / API
+
+API communication is kept in the `api` folder rather than directly inside UI components. Axios is used as the HTTP client.
+
+### Types
+
+Product-related TypeScript interfaces are kept in the `types` folder so they can be reused across the application.
+
+### Navigation
+
+Expo Router is used for file-based navigation. Selecting a product navigates to its corresponding product details page.
+
+### State Management
+
+React's built-in state management (`useState`, `useEffect`) is used because the application is small and does not require global state management.
+
+## API
+
+The application uses the DummyJSON Products API.
+
+Main endpoints:
+
+```text
+GET /products
+GET /products/search?q={query}
+GET /products/category/{category}
+GET /products/{id}
+GET /products/categories
+```
+
+Pagination uses `limit` and `skip`.
+
+For example:
+
+```text
+/products?limit=20&skip=0
+/products?limit=20&skip=20
+/products?limit=20&skip=40
+```
+
+## Search and Category Filtering
+
+The filtering logic follows this approach:
+
+```text
+Search entered?
+│
+├── Yes
+│   ├── Search API
+│   └── Apply category filter locally if selected
+│
+└── No
+    │
+    ├── Category selected → Category API
+    │
+    └── All → Products API
+```
+
+## Pagination
+
+The UI uses 1-based page numbers.
+
+```text
+Page 1 → skip 0
+Page 2 → skip 20
+Page 3 → skip 40
+```
+
+The page size is currently 20 products.
+
+## Product Details
+
+Selecting a product card navigates to:
+
+```text
+/product_details/[id]
+```
+
+The selected product information is passed to the detail screen through Expo Router parameters.
+
+## Loading and Empty States
+
+The application provides separate UI states for:
+
+- Loading products
+- Successful product loading
+- No products found
+- API errors
+- Retry after an API error
+- Image loading
+- Image loading failure
+
+## Pull-to-Refresh
+
+The product list supports pull-to-refresh.
+
+Refreshing the list requests the first page again:
+
+```text
+Page 1
+skip = 0
+```
+
+## Testing
+
+Tests are written using Jest and React Native Testing Library.
+
+Run tests with:
+
+```bash
+npm test
+```
+
+or:
+
+```bash
+npx jest
+```
+
+### Current Test Coverage
+
+The application includes component tests for important user interactions, including product navigation.
+
+The navigation test verifies that pressing a product card calls:
+
+```text
+/product_details/[id]
+```
+
+with the correct product ID and product data.
+
+Example flow:
+
+```text
+Press Product Card
+       ↓
+TouchableOpacity onPress
+       ↓
+router.push()
+       ↓
+Product Details Screen
+```
+
+## Assumptions
+
+- DummyJSON is available and returns data in the expected format.
+- Product thumbnails provided by the API are valid image URLs.
+- The application uses 20 products per page.
+- Search is performed through the DummyJSON search endpoint.
+- When both search and category are selected, the search API is used first and the category is filtered locally.
+
+## Incomplete / Future Improvements
+
+The core requirements of the assessment have been implemented.
+
+Potential improvements for a production application include:
+
+- Image loading/error handling
