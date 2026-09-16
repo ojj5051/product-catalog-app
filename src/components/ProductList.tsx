@@ -21,9 +21,14 @@ type ProductType = {
 interface ProductListProps {
   products: ProductType[];
   loading: boolean;
+  loadProducts: (pageNumber: number) => void;
 }
 
-export default function ProductList({ products, loading }: ProductListProps) {
+export default function ProductList({
+  products,
+  loading,
+  loadProducts,
+}: ProductListProps) {
   const renderProduct = ({ item }: any) => (
     <TouchableOpacity
       style={styles.card}
@@ -77,6 +82,8 @@ export default function ProductList({ products, loading }: ProductListProps) {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={() => loadProducts(1)}
         />
       )}
     </View>
