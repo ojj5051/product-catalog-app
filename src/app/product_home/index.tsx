@@ -16,6 +16,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const LIMIT = 20;
 
+export const filterByCategory = (
+  products: Product[],
+  category: string,
+): Product[] => {
+  if (category === "All") {
+    return products;
+  }
+
+  return products.filter(
+    (product) => product.category === category.toLowerCase(),
+  );
+};
+
 export default function HomeScreen() {
   const [search, setSearch] = useState("");
 
@@ -27,6 +40,7 @@ export default function HomeScreen() {
   const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
 
+  // Load categories
   const loadCategories = async () => {
     try {
       const categories = await getCategories();
@@ -36,6 +50,7 @@ export default function HomeScreen() {
     }
   };
 
+  // Load products with search and category filters
   const loadProducts = async (pageNumber: number = 1) => {
     try {
       setLoading(true);
@@ -48,13 +63,7 @@ export default function HomeScreen() {
       if (search.trim()) {
         response = await searchProducts(search.trim(), LIMIT, skip);
 
-        let result = response.products;
-
-        if (selectedCategory !== "All") {
-          result = result.filter(
-            (product) => product.category === selectedCategory.toLowerCase(),
-          );
-        }
+        const result = filterByCategory(response.products, selectedCategory);
 
         setProducts(result);
       } else if (selectedCategory !== "All") {
@@ -75,10 +84,12 @@ export default function HomeScreen() {
     }
   };
 
+  // Load products when category changes
   useEffect(() => {
     loadProducts(1);
   }, [selectedCategory]);
 
+  // Load products when search changes (debounce)
   useEffect(() => {
     const timer = setTimeout(() => {
       loadProducts(1);
@@ -87,10 +98,12 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Load categories when component mounts
   useEffect(() => {
     loadCategories();
   }, []);
 
+  // Calculate total pages
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
@@ -109,7 +122,11 @@ export default function HomeScreen() {
         onChange={setSelectedCategory}
       />
 
-      <ProductList products={products} loading={loading} />
+      <ProductList
+        products={products}
+        loading={loading}
+        loadProducts={loadProducts}
+      />
 
       <Pagination
         page={page}
